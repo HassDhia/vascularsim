@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vascularsim"
+version = "0.2.0"
+description = "Open-source vascular microbot simulation platform for autonomous surgical microbot navigation"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Hass Dhia", email = "partners@smarttechinvest.com" },
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "numpy",
+    "networkx",
+    "gymnasium",
+    "pyvista",
+    "requests",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "build"]
+train = ["stable-baselines3>=2.0"]
+
+[project.urls]
+Repository = "https://github.com/HassDhia/vascularsim"
+Documentation = "https://github.com/HassDhia/vascularsim#readme"
+
+[project.scripts]
+vascularsim-train = "vascularsim.training.train:main"
+vascularsim-evaluate = "vascularsim.training.evaluate:main"
+vascularsim-benchmark = "vascularsim.benchmarks.runner:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vascularsim"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

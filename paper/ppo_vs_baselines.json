@@ -1,0 +1,23 @@
+{
+  "ppo": {
+    "success_rate": 0.99,
+    "mean_steps": 15.52,
+    "mean_reward": 10.74337142857143,
+    "path_ratio": 1.0,
+    "n_episodes": 100
+  },
+  "random": {
+    "success_rate": 0.52,
+    "mean_steps": 363.19,
+    "mean_reward": -16.76452738402047,
+    "path_ratio": 25.84574867691383,
+    "n_episodes": 100
+  },
+  "oracle": {
+    "success_rate": 1.0,
+    "mean_steps": 10.59,
+    "mean_reward": 10.894100000000003,
+    "path_ratio": 1.0,
+    "n_episodes": 100
+  }
+}

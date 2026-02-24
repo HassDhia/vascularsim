@@ -1,0 +1,92 @@
+{
+  "1": {
+    "name": "straight",
+    "nodes": 20,
+    "random": {
+      "success_rate": 0.42,
+      "mean_steps": 395.8,
+      "mean_reward": -31.15526796079726,
+      "path_ratio": 27.331427567141855,
+      "n_episodes": 50
+    },
+    "oracle": {
+      "success_rate": 1.0,
+      "mean_steps": 11.18,
+      "mean_reward": 10.888199999999998,
+      "path_ratio": 1.0,
+      "n_episodes": 50
+    }
+  },
+  "2": {
+    "name": "bifurcation",
+    "nodes": 35,
+    "random": {
+      "success_rate": 0.18,
+      "mean_steps": 437.82,
+      "mean_reward": -37.916730553047095,
+      "path_ratio": 19.155467372134037,
+      "n_episodes": 50
+    },
+    "oracle": {
+      "success_rate": 1.0,
+      "mean_steps": 9.96,
+      "mean_reward": 10.9004,
+      "path_ratio": 1.0,
+      "n_episodes": 50
+    }
+  },
+  "3": {
+    "name": "tree",
+    "nodes": 50,
+    "random": {
+      "success_rate": 0.12,
+      "mean_steps": 458.94,
+      "mean_reward": -40.30526558279781,
+      "path_ratio": 18.84351851851852,
+      "n_episodes": 50
+    },
+    "oracle": {
+      "success_rate": 1.0,
+      "mean_steps": 15.18,
+      "mean_reward": 10.848199999999999,
+      "path_ratio": 1.0,
+      "n_episodes": 50
+    }
+  },
+  "4": {
+    "name": "ring",
+    "nodes": 43,
+    "random": {
+      "success_rate": 0.5,
+      "mean_steps": 361.68,
+      "mean_reward": -26.95943663589649,
+      "path_ratio": 29.722550782550783,
+      "n_episodes": 50
+    },
+    "oracle": {
+      "success_rate": 1.0,
+      "mean_steps": 8.76,
+      "mean_reward": 10.9124,
+      "path_ratio": 1.0,
+      "n_episodes": 50
+    }
+  },
+  "5": {
+    "name": "dense_mesh",
+    "nodes": 147,
+    "random": {
+      "success_rate": 0.1,
+      "mean_steps": 473.18,
+      "mean_reward": -41.56153957066103,
+      "path_ratio": 22.36031746031746,
+      "n_episodes": 50
+    },
+    "oracle": {
+      "success_rate": 1.0,
+      "mean_steps": 17.3,
+      "mean_reward": 10.826999999999998,
+      "path_ratio": 1.0,
+      "n_episodes": 50
+    }
+  }
+}
