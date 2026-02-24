@@ -11,6 +11,7 @@
 \usepackage{xcolor}
 \usepackage{caption}
 \usepackage{natbib}
+\usepackage{microtype}
 \usepackage{tikz}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.17}
@@ -33,10 +34,10 @@
 
 % ============================================================
 \begin{abstract}
-Autonomous navigation of surgical microbots through vascular networks is a critical capability for targeted drug delivery, thrombectomy, and diagnostic procedures.
-While reinforcement learning (RL) has shown promise for endovascular navigation, progress is hindered by the absence of an open-source simulation platform that integrates vascular anatomy, multi-physics modeling, and standardized RL interfaces.
-We present \textsc{VascularSim}, a modular Python framework that provides: (1)~graph-based vascular anatomy representation with a TubeTK medical imaging data pipeline, (2)~three Gymnasium-compatible RL environments with progressively richer physics, (3)~analytical hemodynamic and magnetic field models, (4)~a neural flow surrogate for real-time prediction, and (5)~a benchmark suite across five difficulty tiers.
-In experiments with Proximal Policy Optimization (PPO), trained agents achieve 99\% navigation success with optimal path efficiency (ratio~1.00), matching the shortest-path oracle and outperforming random baselines (52\%), after 200k training steps completed in 67 seconds on a single CPU.
+Surgical microbots that navigate the vasculature could transform targeted drug delivery, thrombectomy, and diagnostic procedures, yet no open-source simulation platform integrates vascular anatomy, multi-physics modeling, and standardized reinforcement learning (RL) interfaces.
+We present \textsc{VascularSim}, a modular Python framework that provides: (1)~graph-based vascular anatomy representation with a TubeTK medical imaging data pipeline, (2)~three Gymnasium-compatible RL environments with progressively richer physics, (3)~analytical hemodynamic and magnetic field models, (4)~a neural flow surrogate that accelerates repeated flow queries on fixed graphs, and (5)~a benchmark suite across five difficulty tiers.
+On the default 30-node training environment, a Proximal Policy Optimization (PPO) agent achieves 99\% navigation success with a path length ratio of~1.00 (computed over successful episodes), matching the shortest-path oracle and outperforming a random baseline (52\% success), after 200k training steps completed in 67 seconds on a single CPU.
+Across the five benchmark tiers, random-agent success ranges from 10\% (147-node dense mesh) to 50\% (ring topology), establishing a difficulty gradient for algorithm comparison.
 \textsc{VascularSim} is released under the MIT license at \url{https://github.com/HassDhia/vascularsim} and is installable via \texttt{pip install vascularsim}.
 \end{abstract}
 
@@ -78,10 +79,11 @@ CathSim~\citep{jianu2022cathsim} provides a PyBullet-based simulator for cathete
 The stEVE framework~\citep{karstensen2024steve} demonstrated PPO-based endovascular navigation achieving 98\% success rates but uses a custom non-reusable simulation backend.
 Neither provides standardized benchmark environments or multi-physics integration.
 
-\paragraph{Hemodynamic simulation.}
+\paragraph{Surgical and hemodynamic simulation.}
+The SOFA framework~\citep{faure2012sofa} provides a mature open-source platform for real-time surgical simulation with support for deformable tissue and fluid--structure interaction; however, it targets interactive surgical training rather than RL-compatible batch environments, lacks standardized Gymnasium interfaces, and its per-step latency (10--50\,ms for coupled physics) exceeds the sub-millisecond budget required for RL training at scale.
 SimVascular~\citep{updegrove2017simvascular} is the leading open-source cardiovascular simulation platform for patient-specific modeling.
 HemeLB~\citep{mazzeo2008hemelb} implements lattice Boltzmann methods for cerebrovascular hemodynamics.
-Both are designed for offline high-fidelity computation and cannot provide the real-time performance (${<}$1\,ms per step) required for RL training.
+Both SimVascular and HemeLB are designed for offline high-fidelity computation and cannot provide the real-time performance (${<}$1\,ms per step) required for RL training.
 
 \paragraph{RL for microrobot control.}
 Yang et al.~\citep{yang2022hierarchical} applied hierarchical deep RL at cellular scale with red blood cell interactions.
@@ -99,7 +101,7 @@ IXI\footnote{\url{https://brain-development.org/ixi-dataset/}} provides 600 brai
 \section{System Architecture}
 \label{sec:architecture}
 
-\textsc{VascularSim} is organized into five modules: data ingestion, graph representation, RL environments, physics models, and benchmarking.
+\textsc{VascularSim} organizes into five modules: the TubeTK data pipeline, graph representation, RL environments, physics models, and benchmarking.
 Figure~\ref{fig:architecture} illustrates the system architecture and data flow.
 
 \begin{figure}[t]
@@ -107,34 +109,34 @@ Figure~\ref{fig:architecture} illustrates the system architecture and data flow.
 \resizebox{\columnwidth}{!}{%
 \begin{tikzpicture}[
     every node/.style={font=\scriptsize},
-    block/.style={draw, rounded corners, fill=blue!8, minimum width=2.0cm, minimum height=0.5cm, align=center},
-    env/.style={draw, rounded corners, fill=green!10, minimum height=0.45cm, align=center, inner sep=3pt},
-    phys/.style={draw, rounded corners, fill=orange!12, minimum height=0.45cm, align=center, inner sep=3pt},
-    side/.style={draw, rounded corners, fill=yellow!15, minimum height=0.45cm, align=center, inner sep=3pt},
+    block/.style={draw, rounded corners, fill=blue!30, minimum width=2.2cm, minimum height=0.6cm, align=center},
+    env/.style={draw, rounded corners, fill=green!30, minimum width=2.0cm, minimum height=0.6cm, align=center, inner sep=3pt},
+    phys/.style={draw, rounded corners, fill=orange!35, minimum width=1.8cm, minimum height=0.6cm, align=center, inner sep=3pt},
+    side/.style={draw, rounded corners, fill=yellow!35, minimum width=1.8cm, minimum height=0.6cm, align=center, inner sep=3pt},
+    train/.style={draw, rounded corners, fill=red!25, minimum width=2.2cm, minimum height=0.6cm, align=center},
     arr/.style={-{Stealth[length=2mm]}, thick},
+    darr/.style={-{Stealth[length=2mm]}, thick, dashed, gray!70},
 ]
-% Data pipeline
+% Layer 1: Data pipeline (top)
 \node[block] (tre) at (0, 0) {TubeTK .tre files};
-\node[block] (parser) at (0, -0.9) {\texttt{parse\_tre()}};
-\node[block] (graph) at (0, -1.8) {\textbf{VascularGraph}\\NetworkX DiGraph};
+\node[block] (parser) at (0, -1.0) {\texttt{parse\_tre()}};
+\node[block] (graph) at (0, -2.1) {\textbf{VascularGraph}\\NetworkX DiGraph};
 
-% Environments (generously spaced row)
-\node[env] (vnav) at (-2.2, -3.1) {VascularNav\\-v0};
-\node[env] (fnav) at (0, -3.1) {FlowAware\\Nav-v0};
-\node[env] (mnav) at (2.2, -3.1) {Magnetic\\Nav-v0};
+% Layer 2: Environments (middle row, wide spacing)
+\node[env] (vnav) at (-2.5, -3.6) {VascularNav\\-v0};
+\node[env] (fnav) at (0, -3.6) {FlowAware\\Nav-v0};
+\node[env] (mnav) at (2.5, -3.6) {Magnetic\\Nav-v0};
 
-% Physics models (right side, stacked)
-\node[phys] (hemo) at (3.8, -2.6) {Hemo-\\dynamics};
-\node[phys] (mag) at (3.8, -3.5) {Magnetic\\Fields};
+% Layer 2 sides: Physics (far right) and Benchmark (far left)
+\node[phys] (hemo) at (5.0, -3.0) {Hemo-\\dynamics};
+\node[phys] (mag) at (5.0, -4.1) {Magnetic\\Fields};
+\node[side] (bench) at (-5.0, -3.6) {Benchmark\\5 Tiers};
 
-% Training pipeline
-\node[block, fill=red!8] (flat) at (0, -4.3) {\texttt{FlatNavObservation}};
-\node[block, fill=red!8] (ppo) at (0, -5.2) {SB3 PPO Training};
+% Layer 3: Training pipeline (bottom)
+\node[train] (flat) at (0, -5.1) {\texttt{FlatNavObservation}};
+\node[train] (ppo) at (0, -6.2) {SB3 PPO Training};
 
-% Benchmark suite (left side)
-\node[side] (bench) at (-3.8, -3.1) {Benchmark\\5 Tiers};
-
-% Data flow (solid arrows)
+% Data flow: solid arrows (vertical pipeline)
 \draw[arr] (tre) -- (parser);
 \draw[arr] (parser) -- (graph);
 \draw[arr] (graph) -- (vnav);
@@ -145,14 +147,14 @@ Figure~\ref{fig:architecture} illustrates the system architecture and data flow.
 \draw[arr] (mnav) -- (flat);
 \draw[arr] (flat) -- (ppo);
 
-% Physics integration (dashed arrows)
-\draw[arr, dashed] (hemo.west) -- (fnav.north east);
-\draw[arr, dashed] (mag.west) -- (mnav.east);
-\draw[arr, dashed] (bench.east) -- (vnav.west);
+% Physics integration: dashed arrows (routed to avoid node overlap)
+\draw[darr] (hemo.west) -- +(-0.4,0) |- ([yshift=2pt]fnav.east);
+\draw[darr] (mag.west) -- +(-0.4,0) |- ([yshift=-2pt]mnav.east);
+\draw[darr] (bench.east) -- (vnav.west);
 
 \end{tikzpicture}%
 }
-\caption{VascularSim system architecture. Solid arrows show data flow from medical imaging to RL training. Dashed arrows show physics integration into specialized environments.}
+\caption{VascularSim system architecture. Solid arrows show data flow from medical imaging to RL training. Dashed arrows indicate physics integration into specialized environments.}
 \label{fig:architecture}
 \end{figure}
 
@@ -160,10 +162,10 @@ Figure~\ref{fig:architecture} illustrates the system architecture and data flow.
 \label{sec:graph}
 
 The \texttt{VascularGraph} class wraps a NetworkX directed graph where each node stores a 3D position $\mathbf{p} \in \mathbb{R}^3$ and vessel radius $r > 0$, and each edge stores Euclidean length $\ell$ and mean radius $\bar{r}$.
-The graph is constructed from \texttt{Tube} objects via the \texttt{from\_tubes()} factory method.
+The \texttt{from\_tubes()} factory method constructs the graph from \texttt{Tube} objects.
 Node IDs follow the format \texttt{"\{tube\_id\}\_\{point\_idx\}"}, preserving the anatomical hierarchy of parent--child vessel relationships.
 
-For RL navigation, an undirected view of the graph is constructed so that the agent can traverse edges in both directions, reflecting the physical bidirectionality of blood vessels.
+For RL navigation, we construct an undirected view of the graph so that the agent can traverse edges in both directions, reflecting the physical bidirectionality of blood vessels.
 
 \subsection{TubeTK Data Pipeline}
 \label{sec:data}
@@ -186,7 +188,7 @@ r_t = r_\text{time} + r_\text{progress} + r_\text{goal}
 \end{equation}
 where $r_\text{time} = -0.01$ (per-step penalty), $r_\text{progress} = (\|\mathbf{p}_{t-1} - \mathbf{g}\| - \|\mathbf{p}_t - \mathbf{g}\|) / d_0$ (normalized distance reduction), and $r_\text{goal} = +10.0$ upon reaching the target.
 Invalid or ``stay'' actions incur an additional $-0.1$ penalty.
-Episodes are initialized with start--target pairs at least 5 graph hops apart when possible.
+The environment initializes episodes with start--target pairs at least 5 graph hops apart when possible.
 
 \paragraph{FlowAwareNav-v0} extends VascularNav-v0 with hemodynamic observations.
 The observation space adds: flow velocity at the current node (scalar) and flow velocities at neighboring edges (vector of size $k$).
@@ -196,8 +198,11 @@ The reward includes a flow-alignment bonus: moving \emph{with} the flow directio
 The observation space adds: the B-field vector $\mathbf{B} \in \mathbb{R}^3$ and gradient force vector $\mathbf{F} \in \mathbb{R}^3$ at the agent's position.
 The reward includes a magnetic alignment term: $r_\text{mag} = 0.03 \cdot \cos\theta$, where $\theta$ is the angle between the agent's movement direction and the magnetic force vector.
 
-\paragraph{SB3 Compatibility.}
-A \texttt{FlatNavObservation} wrapper flattens the dictionary observation into a $\text{Box}(8,)$ vector $[\mathbf{p}_\text{agent}, \mathbf{p}_\text{target}, \hat{n}, d]$ suitable for Stable-Baselines3's \texttt{MlpPolicy}.
+\subsection{Observation Flattening}
+\label{sec:flatten}
+
+A \texttt{FlatNavObservation} wrapper bridges the dictionary-based environment observations to the flat vector inputs required by standard RL libraries.
+It flattens each observation into a $\text{Box}(8,)$ vector $[\mathbf{p}_\text{agent}, \mathbf{p}_\text{target}, \hat{n}, d]$ suitable for Stable-Baselines3's \texttt{MlpPolicy}, enabling direct training without custom feature extractors.
 
 % ============================================================
 \section{Physics Models}
@@ -213,7 +218,7 @@ v = \frac{\Delta P \cdot r^2}{8 \mu L}
 \end{equation}
 where $\Delta P$ is the pressure drop across the edge and $\mu = 3.5 \times 10^{-3}$\,Pa${\cdot}$s is the blood viscosity.
 
-Node pressures are distributed linearly from the inlet pressure $P_\text{in} = 13{,}332$\,Pa (100\,mmHg) to the outlet pressure $P_\text{out} = 2{,}666$\,Pa (20\,mmHg) based on topological distance from the graph root.
+We distribute node pressures linearly from the inlet pressure $P_\text{in} = 13{,}332$\,Pa (100\,mmHg) to the outlet pressure $P_\text{out} = 2{,}666$\,Pa (20\,mmHg) based on topological distance from the graph root.
 
 At bifurcation points, flow is distributed according to Murray's law:
 \begin{equation}
@@ -221,7 +226,7 @@ Q_i \propto r_i^3
 \end{equation}
 where $Q_i$ is the volumetric flow rate and $r_i$ the radius of child branch $i$.
 
-Wall shear stress is computed as $\tau_w = 4 \mu v / r$.
+We compute wall shear stress as $\tau_w = 4 \mu v / r$.
 
 \subsection{Magnetic Field Modeling}
 \label{sec:magnetic}
@@ -251,6 +256,8 @@ Training uses He initialization, mini-batch SGD with learning rate $10^{-3}$, an
 \end{equation}
 
 The \texttt{from\_graph()} factory method trains the surrogate end-to-end from a \texttt{VascularGraph}.
+On a 30-node test graph, the surrogate achieves $R^2 > 0.99$ against the analytical Hagen--Poiseuille ground truth after 200 training epochs, with mean absolute error below 1\% of the velocity range.
+The surrogate's primary value is for scenarios with fixed graph topology where repeated forward queries dominate (e.g., multi-episode RL training on a single anatomy), amortizing the per-edge analytical computation into a single batched inference call.
 The pure-NumPy implementation ensures zero external dependencies beyond NumPy.
 
 % ============================================================
@@ -258,7 +265,7 @@ The pure-NumPy implementation ensures zero external dependencies beyond NumPy.
 \label{sec:benchmarks}
 
 We define five benchmark tiers of increasing topological complexity, summarized in Table~\ref{tab:tiers}.
-Each tier is procedurally generated with a fixed random seed for reproducibility.
+We procedurally generate each tier with a fixed random seed for reproducibility.
 
 \begin{table}[t]
 \centering
@@ -284,7 +291,7 @@ Tier & Name & Nodes & Topology \\
 \textbf{Tier~5 (Dense Mesh)} creates a 20-node trunk with 8 primary branches, sub-branches, loop connections, and dead-end stubs, producing a 147-node graph that tests navigation in realistic vascular complexity.
 
 The benchmark runner evaluates agents via a callable interface, collecting per-tier success rate, mean episode length, mean reward, and computation time per step.
-Results are exported as JSON for reproducible comparison.
+The runner exports results as JSON for reproducible comparison.
 
 % ============================================================
 \section{Experiments}
@@ -350,7 +357,7 @@ Path length ratio  & \textbf{1.00} & 25.85 & \textbf{1.00} \\
 \end{tabular}
 \end{table}
 
-The PPO agent achieves 99\% success with a path length ratio of 1.00, indicating it follows the shortest graph path in nearly all episodes.
+The PPO agent achieves 99\% success with a path length ratio of 1.00 (computed over successful episodes only; the single failure is excluded from this ratio), indicating it follows the shortest graph path in nearly all episodes.
 Its mean episode length (15.5 steps) is within 46\% of the oracle (10.6 steps), with the gap attributable to the ${\sim}$5-hop minimum start--target distance randomization introducing variance in episode difficulty.
 The random baseline succeeds in only 52\% of episodes, requiring ${\sim}$23$\times$ more steps than the PPO agent.
 
@@ -422,12 +429,17 @@ The neural surrogate can be replaced with a physics-informed neural network (PIN
 The magnetic model accepts arbitrary coil geometries.
 New environments can extend \texttt{VascularNavEnv} to add observations and reward terms without modifying the base implementation.
 
-\paragraph{Limitations.}
-The current version uses discrete node-to-node navigation rather than continuous position control.
-Vessel walls are rigid (no compliance or deformation).
-The hemodynamic model does not capture pulsatile flow or non-Newtonian rheology.
-The PPO results in Section~\ref{sec:experiments} are evaluated on the default 30-node environment; per-tier PPO training across all five benchmark tiers is left to future work.
-These simplifications are deliberate for the v0.1 release and represent a starting point for the community to extend.
+\paragraph{Limitations and sim-to-real gap.}
+Three deliberate simplifications bound the current fidelity.
+First, navigation is discrete (node-to-node selection) rather than continuous position control; this precludes fine-grained steering maneuvers that real microbots require and limits the action space to the graph connectivity.
+Second, vessel walls are rigid---the model omits compliance, deformation, and wall interaction forces---which means that contact-dependent behaviors such as wall-following or vessel dilation are not captured.
+Third, the hemodynamic model assumes steady-state, Newtonian, laminar flow (Hagen--Poiseuille); it does not capture pulsatile cardiac cycles, non-Newtonian shear-thinning of blood, or red blood cell interactions that dominate below ${\sim}$100\,$\mu$m diameter.
+
+These simplifications widen the sim-to-real gap.
+Policies trained in VascularSim would require domain randomization, system identification, or sim-to-real transfer techniques (e.g., the progressive fidelity approach of \citet{medany2025modelbased}) before deployment on physical microrobots.
+We view VascularSim as an algorithm development and benchmarking platform---not a deployment-ready digital twin---and the modular architecture is designed so that each physics module can be independently replaced with higher-fidelity alternatives as the field matures.
+
+Additionally, the PPO results in Section~\ref{sec:experiments} are evaluated only on the default 30-node environment; systematic per-tier PPO training across all five benchmark tiers remains future work.
 
 % ============================================================
 \section{Conclusion}
