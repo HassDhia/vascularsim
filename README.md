@@ -1,6 +1,13 @@
 # VascularSim
 
-Open-source simulation platform for autonomous surgical microbot navigation through vascular networks.
+**An Open-Source Platform for Reinforcement Learning-Based Microbot Navigation in Vascular Networks**
+
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Tests](https://img.shields.io/badge/tests-139%20passing-brightgreen.svg)
+[![PyPI version](https://img.shields.io/pypi/v/vascularsim.svg)](https://pypi.org/project/vascularsim/)
+
+---
 
 VascularSim provides a complete stack for training RL agents to navigate blood vessel graphs: TubeTK data ingestion, Gymnasium environments with physics-based observations, analytical hemodynamics and magnetic field models, a neural flow surrogate, and a benchmark suite across 5 difficulty tiers.
 
