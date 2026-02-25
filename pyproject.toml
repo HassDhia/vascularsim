@@ -48,5 +48,15 @@ vascularsim-benchmark = "vascularsim.benchmarks.runner:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/vascularsim"]
 
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "paper/",
+    "checkpoints/",
+    ".venv/",
+    ".claude/",
+    "*.pt",
+    "*.zip",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
