@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "vascularsim"
-version = "0.2.0"
+version = "0.2.1"
 description = "Open-source vascular microbot simulation platform for autonomous surgical microbot navigation"
 readme = "README.md"
 license = "MIT"
